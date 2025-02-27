@@ -47,23 +47,18 @@ def evolutionSimulation(params, set_params, shots, machine, circuit_type, path_t
     qapi = QAPI(machine=machine)
     
     if circuit_type == 'single':
-        job_id = qapi.submit_job(evolutionCircuit(set_params,params), 
-                             shots=shots, 
-                             machine=machine, # emulator = 'H1-1E'
-                             name='singleEvolutionCircuitSPSA')
         n_len = shots*2
-    if circuit_type == 'double':
-        job_id = qapi.submit_job(doubledEvolutionCircuit(set_params,params), 
-                             shots=shots, 
-                             machine=machine, # emulator = 'H1-1E'
-                             name='doubleEvolutionCircuitSPSA')
+    elif circuit_type == 'double':
         n_len = shots*4
-    if circuit_type == 'triple':
-        job_id = qapi.submit_job(tripledEvolutionCircuit(set_params,params), 
-                             shots=shots, 
-                             machine=machine, # emulator = 'H1-1E'
-                             name='tripleEvolutionCircuitSPSA')
+    elif circuit_type == 'triple':
         n_len = shots*6
+    else:
+        raise Exception("circuit_type must be one of: 'single', 'double', or 'triple'")
+    
+    job_id = qapi.submit_job(evolutionCircuit(set_params,params,circuit_type), 
+                            shots=shots, 
+                            machine=machine, # emulator = 'H1-1E'
+                            name=str(circuit_type)+'EvolutionCircuitSPSA')
     n = 0
     i = 0
     
@@ -303,9 +298,6 @@ def completeOptimise(machine,circuit_type,xInit,p0,p1,path_to_savefile,iteration
     plt.legend()
     plt.xlabel('time')
     plt.ylabel(r'-log$|\langle\psi(t)|\psi(0)\rangle|^2$')
-    plt.minorticks_on()
-    plt.grid(True, which='major')
-    plt.grid(True, which='minor', ls = ':')
     plt.savefig(str(path_to_savefile)+'_loschmidtEcho_'+timestamp+'.png')
     if show == True:
         plt.show()
