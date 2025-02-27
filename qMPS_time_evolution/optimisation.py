@@ -29,7 +29,7 @@ x1 = paramData[1]
 x2 = paramData[2]
 
 
-def evolutionSimulation(params, set_params, shots, machine, circuit_type,path_to_savefile, timestamp):
+def evolutionSimulation(params, set_params, shots, machine, circuit_type, path_to_savefile, timestamp):
     '''
     Cost function for iMPS evolution, submits job to Quantinuum processor then evaluates fidelity density
     Inputs: 
@@ -43,7 +43,7 @@ def evolutionSimulation(params, set_params, shots, machine, circuit_type,path_to
             'single': one copy of the circuit per circuit
             'double': two copies of the circuit per circuit
             'triple': three copies of the circuit per circuit
-        path_to_savefile: (str) the name of the file to save the data to incase of failure
+        path_to_savefile: (str) the path to and name of the file to save the data to incase of failure
         timestamp: (str) timestamp to append to filename (calculated in the optimise function)
         
     '''
@@ -90,35 +90,37 @@ def evolutionSimulation(params, set_params, shots, machine, circuit_type,path_to
         json.dump(opt_tracker, file, indent=4)
     return -cost
 
-def optimise(machine,circuit_type,p0,p1,timestep,path_to_savefile,iterations=6,shots=1000,a=0.02,c=0.35):
+
+def optimise(machine,circuit_type,p0,p1,path_to_savefile,timestep, show=True,iterations=6,shots=1000,a=0.02,c=0.35):
     '''
     Optimise just one time step 
-    Uses a linear extrapolation to make an initial guess of the next parameter
-    Then uses SPSA to further optimise the parameter to find the next step of the evolution
+    - Uses a linear extrapolation to make an initial guess of the next parameter
+    - Then uses SPSA to further optimise the parameter to find the next step of the evolution
+    =============
     Inputs:
-        machine: 
+        machine (str):
             for emulator: machine= 'H1-1E'
             for actual hardware: machine = 'H1-1' or 'H1-2'
-        circuit_type: (str)
+        circuit_type (str):
             'single': one copy of the circuit per circuit
             'double': two copies of the circuit per circuit
             'triple': three copies of the circuit per circuit
-        p0,p1: the parameters for the previous two time steps (used to do the fitting)
-        timestep: which timestep is being evolved from
-        path_to_savefile: (str) the name of the file to save the data to incase of failure
-        iterations: (default=6) the number of iterations of the SPSA algorithm to run
-        startpoint: (default=0) the iteration number to start evaluating from
-        shots: (default = 1000) the number of shots with which to evaluate the cost function
-        a,c: parameters of SPSA: used to adjust the search parameters (use a = 0.02, c = 0.35 for emulator runs)
-
+        p0,p1 (list or np.array): the parameters for the previous two time steps (used to do the fitting)
+        timestep (str): which timestep is being evolved from
+        show (bool): Set True to see the Loschmidt echo plotted for the current and updated timestep (default=True)
+        path_to_savefile (str): the name of the file to save the data to incase of failure
+        iterations (int): the number of iterations of the SPSA algorithm to run (default=6)
+        shots (int): the number of shots with which to evaluate the cost function (default = 1000)
+        a,c (float): parameters of SPSA: used to adjust the search parameters (default a = 0.02, c = 0.35) 
+    =============
     Outputs:
-        new_param_guess: array of the updated set of parameters
-    Also shows a plot of the Loschmidt echo with this time evolution step plotted on it for comparison. Serves as a check the evolution is progresssing correctly
+        new_param_guess (np.array): array of the updated set of parameters
+    Also (if show=True) shows a plot of the Loschmidt echo with this time evolution step plotted on it for comparison. Serves as a check the evolution is progresssing correctly
     '''
     qapi = QAPI(machine=machine) # emulator = 'H1-1E',  machine = 'H1-1' or 'H1-2'?
     now = datetime.now()
     timestamp= now.strftime("%Y%m%dT%H%M%S")
-    print('Associated timestamp: ' + timestamp)
+    #print('Associated timestamp: ' + timestamp)
     
     def callback_fn(xk):
         cost = expectation(set_params,xk,g,dt)
@@ -155,23 +157,23 @@ def optimise(machine,circuit_type,p0,p1,timestep,path_to_savefile,iterations=6,s
     #param_guess = p1
 
     # SPSA optmisation
-    opt = minimizeSPSA(evolutionSimulation,x0 = param_guess, args = [set_params, shots, machine, circuit_type,path_to_savefile, timestamp],  niter = iterations, paired=False,a=a, c=c, callback=callback_fn, restart_point=0)
+    opt = minimizeSPSA(evolutionSimulation,x0 = param_guess, args = [set_params, shots, machine, circuit_type, path_to_savefile, timestamp],  niter = iterations, paired=False,a=a, c=c, callback=callback_fn, restart_point=0)
     
     
     new_param_guess = np.array(opt.x)
-
-    tm_losch = [overlap(xInit,params) for params in paramData]
-    plt.plot(ltimes,correct_ls, ls = ':', label = 'exact')
-    plt.plot([0.2*i for i in range(len(tm_losch))],-np.log(tm_losch), ls = ':', label = 'tm simulation')
-    plt.plot([timestep, timestep+0.2],-np.log([overlap(xInit,p1),overlap(xInit,new_param_guess)]), label = 'emulator simulation', marker = 'x')
-    plt.xlim(-0.1,2.1)
-    plt.legend()
-    plt.xlabel('time')
-    plt.ylabel(r'-log$|\langle\psi(t)|\psi(0)\rangle|^2$')
-    plt.minorticks_on()
-    plt.grid(True, which='major')
-    plt.grid(True, which='minor', ls = ':')
-    plt.show()
+    if show == True:
+        tm_losch = [overlap(xInit,params) for params in paramData]
+        plt.plot(ltimes,correct_ls, ls = ':', label = 'exact')
+        plt.plot([0.2*i for i in range(len(tm_losch))],-np.log(tm_losch), ls = ':', label = 'tm simulation')
+        plt.plot([timestep, timestep+0.2],-np.log([overlap(xInit,p1),overlap(xInit,new_param_guess)]), label = 'emulator simulation', marker = 'x')
+        plt.xlim(-0.1,2.1)
+        plt.legend()
+        plt.xlabel('time')
+        plt.ylabel(r'-log$|\langle\psi(t)|\psi(0)\rangle|^2$')
+        plt.minorticks_on()
+        plt.grid(True, which='major')
+        plt.grid(True, which='minor', ls = ':')
+        plt.show()
     return new_param_guess
 
 def restartFromFail(machine,circuit_type,p1,timestep,timestamp,path_to_savefile,iterations=6,shots=1000,a=0.02,c=0.35,show=True):

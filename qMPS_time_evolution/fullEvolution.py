@@ -13,7 +13,7 @@ from datetime import datetime
 from SPSA import minimizeSPSA
 from classical import expectation, overlap, param_to_tensor, linFit
 from Loschmidt import loschmidt_paper
-from circuits import evolutionCircuit,doubledEvolutionCircuit,tripledEvolutionCircuit
+from circuits import evolutionCircuit, doubledEvolutionCircuit, tripledEvolutionCircuit
 from ansatz import stateAnsatzXZ
 from processing import evolSwapTestRatio
 from Hamiltonian import evolution_op
@@ -28,7 +28,6 @@ x0 = paramData[0]
 x1 = paramData[1]
 x2 = paramData[2]
 
-#fullTMdata = np.load('TMparams.npy')
 
 def evolutionSimulation(params, set_params, shots, machine, circuit_type, path_to_savefile, timestamp):
     '''
@@ -44,7 +43,7 @@ def evolutionSimulation(params, set_params, shots, machine, circuit_type, path_t
             'single': one copy of the circuit per circuit
             'double': two copies of the circuit per circuit
             'triple': three copies of the circuit per circuit
-        path_to_savefile: (str) the path and name of the file to save the data to incase of failure
+        path_to_savefile: (str) the path to and name of the file to save the data to incase of failure
         timestamp: (str) timestamp to append to filename (calculated in the optimise function)
         
     '''
@@ -92,15 +91,15 @@ def evolutionSimulation(params, set_params, shots, machine, circuit_type, path_t
     return -cost
 
 
-def optimiseForCompleteRun(machine,circuit_type,p0,p1,path_to_savefile,iterations=6,shots=1000,a=0.02,c=0.35):
+def optimiseForCompleteRun(machine,circuit_type,p0,p1,path_to_savefile,timestep,show=True,iterations=6,shots=1000,a=0.02,c=0.35):
     '''
     Optimise just one time step 
-    Uses either the linear fit to make an initial guess of the next parameter
+    Uses a linear extrapolation to make an initial guess of the next parameter
     Then uses SPSA to further optimise the parameter to find the next step of the evolution
     Inputs:
         machine: (str)
             for emulator: machine= 'H1-1E'
-            for actual hardware: machine = 'H1-1' or 'H1-2'?
+            for actual hardware: machine = 'H1-1' or 'H1-2'
         circuit_type: (str)
             'single': one copy of the circuit per circuit
             'double': two copies of the circuit per circuit
@@ -154,12 +153,23 @@ def optimiseForCompleteRun(machine,circuit_type,p0,p1,path_to_savefile,iteration
     #param_guess = p1
 
     # SPSA optmisation
-    opt = minimizeSPSA(evolutionSimulation,x0 = param_guess, args = [set_params,circuit_type, shots, machine, path_to_savefile, timestamp],  niter = iterations, paired=False,a=a, c=c, callback=callback_fn, restart_point=0)
+    opt = minimizeSPSA(evolutionSimulation,x0 = param_guess, args = [set_params, shots, machine, circuit_type, path_to_savefile, timestamp],  niter = iterations, paired=False,a=a, c=c, callback=callback_fn, restart_point=0)
     
     
     new_param_guess = np.array(opt.x)
 
-
+    tm_losch = [overlap(xInit,params) for params in paramData]
+    plt.plot(ltimes,correct_ls, ls = ':', label = 'exact')
+    plt.plot([0.2*i for i in range(len(tm_losch))],-np.log(tm_losch), ls = ':', label = 'tm simulation')
+    plt.plot([timestep, timestep+0.2],-np.log([overlap(xInit,p1),overlap(xInit,new_param_guess)]), label = 'emulator simulation', marker = 'x')
+    plt.xlim(-0.1,2.1)
+    plt.legend()
+    plt.xlabel('time')
+    plt.ylabel(r'-log$|\langle\psi(t)|\psi(0)\rangle|^2$')
+    plt.minorticks_on()
+    plt.grid(True, which='major')
+    plt.grid(True, which='minor', ls = ':')
+    plt.show()
     return new_param_guess
 
 def completeOptimise(machine,circuit_type,xInit,p0,p1,path_to_savefile,iterations=6,shots=1000,a=0.02,c=0.35):
