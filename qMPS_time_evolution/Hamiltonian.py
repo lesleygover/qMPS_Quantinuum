@@ -1,6 +1,6 @@
 from functools import reduce
 from itertools import product
-from numpy import zeros, kron, trace, eye, allclose, array
+from numpy import zeros, kron, trace, eye, array
 import numpy as np
 from scipy.linalg import expm
 import cirq
@@ -11,40 +11,6 @@ Sy = 1j*array([[0, 1],[-1, 0]])
 Sz = array([[1, 0],[0, -1]])
 I = eye(2)+0j
 S = {'I': I, 'X': Sx, 'Y': Sy, 'Z': Sz}
-
-class PauliMeasure(cirq.Gate):
-    """PauliMeasure:apply appropriate transformation to 2 qubits
-       st. measuring qb[0] in z basis measures string"""
-    def __init__(self, string):
-        if string=='II':
-            raise Exception('don\'t measure the identity')
-        assert len(string)==2
-        self.string = string
-
-    def _decompose_(self, qubits):
-
-        def single_qubits(string, qubit):
-            assert len(string)==1
-            if string =='X':
-                yield cirq.H(qubit)
-            elif string == 'Y':
-                yield cirq.inverse(cirq.S(qubit))
-                yield cirq.H(qubit)
-
-        i, j = self.string
-        if i=='I':
-            yield cirq.SWAP(qubits[0], qubits[1])
-            j, i = i, j
-        yield single_qubits(i, qubits[0])
-        yield single_qubits(j, qubits[1])
-        if i!='I' and j!='I':
-            yield cirq.CNOT(qubits[1], qubits[0])
-
-    def num_qubits(self):
-        return 2
-
-    def _circuit_diagram_info_(self, args):
-        return list(self.string)
 
 class Hamiltonian:
     """
@@ -79,19 +45,6 @@ class Hamiltonian:
         del self.strings['II']
         return self
 
-    def measure_energy(self, circuit, qubits, reps=300000):
-        assert self.strings is not None
-        ev = 0
-        for string, g in self.strings.items():
-            c = circuit.copy()
-            c.append(PauliMeasure(string)(*qubits))
-            c.append(cirq.measure(qubits[0], key=string))
-
-            sim = cirq.Simulator()
-            meas = sim.run(c, repetitions=reps).measurements[string]
-            ev += g*array(list(map(lambda x: 1-2*int(x), meas))).mean()
-        return ev
-
     def calculate_energy(self, circuit, loc=0):
         c = circuit.copy()
         sim = cirq.Simulator()
@@ -102,16 +55,32 @@ class Hamiltonian:
         H = reduce(kron, [I]*loc+[H]+[I]*(len(c.all_qubits())-loc-2))
         return np.real(ψ.conj().T@H@ψ)
 
-def evolution_op(g,t):
+def evolution_op(g,dt):
+    '''
+    TFIM evolution operator for use in transfer matrix simulation
+    Inputs:
+        g (float): coupling strength
+        dt (float): length of timestep
+    Outputs:
+        W (np.array): the evolution operator in shape (2,2,2,2)
+    '''
     n = 2
     H = Hamiltonian(({'ZZ': -1, 'X': g})).to_matrix()
-    W = expm(-2j*t*H).reshape([2]*(2*n))
+    W = expm(-2j*dt*H).reshape([2]*(2*n))
     return W
 
-def evolution_circuit_op(g,t):
+def evolution_circuit_op(g,dt):
+    '''
+    TFIM evolution operator for use in circuit simulation
+    Inputs:
+        g (float): coupling strength
+        dt (float): length of timestep
+    Outputs:
+        W (np.array): the evolution operator in shape (4,4)
+    '''
     n=2
     H = Hamiltonian(({'ZZ': -1, 'X': g})).to_matrix()
-    W = expm(-2j*t*H)
+    W = expm(-2j*dt*H)
     return W
 
 class Wgate0202(cirq.Gate):
