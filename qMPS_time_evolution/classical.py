@@ -19,14 +19,12 @@ def unitary_to_RCF_tensor(U):
     i == A == k
          |
          j
-    Parameters
-    ----------
-    INPUTS:
-        U: numpy.ndarray
-            A 4x4 unitary representing a 2 qubit operation.
-    OUTPUTS:
-        A: numpy.ndarray
-            A MPS tensor representation of the unitary U
+    ===========
+    Inputs 
+        U (np.ndarray): A 4x4 unitary representing a 2 qubit operation.
+    ===========
+    Outputs 
+        A (np.ndarray): A MPS tensor representation of the unitary U
     '''
     n=2
     zero=np.array([1.,0.])
@@ -50,14 +48,12 @@ def unitary_to_LCF_tensor(U):
     i == A == k
          |
          j
-    Parameters
-    ----------
-    INPUTS:
-        U: numpy.ndarray
-            A 4x4 unitary representing a 2 qubit operation.
-    OUTPUTS:
-        A: numpy.ndarray
-            A MPS tensor representation of the unitary U
+    ===========
+    Inputs 
+        U (np.ndarray): A 4x4 unitary representing a 2 qubit operation.
+    ===========
+    Outputs 
+        A (np.ndarray): A MPS tensor representation of the unitary U
     '''
     n = int(np.log2(U.shape[0]))
     zero = np.array([1., 0.])
@@ -76,13 +72,12 @@ def map_AB(tensorA, tensorB):
 	     |
 	k -- B -- l
 	where the shape of the output is (i*k, j*l)
-	Parameters
-	----------
-    INPUTS:
-	    tensorA, tensorB: numpy.ndarray
-            Two iMPS tensors A & B
-    OUTPUTS:
-        Mixed transfer matrix of the iMPS tensors A and B
+	===========
+    Inputs 
+	    tensorA, tensorB (np.ndarray): Two iMPS tensors A & B
+    ===========
+    Outputs:
+        (np.ndarray) Mixed transfer matrix of the iMPS tensors A and B
 	'''
 	i, _, j = tensorA.shape
 	k, _, l = tensorB.shape
@@ -93,12 +88,13 @@ def right_fixed_point(E, all_evals=False):
     '''
     Calculate the right fixed point of a transfer matrix E
     E.shape = (N, N)
-    INPUTS:
-        E: numpy.ndarray
-            Transfer matrix E
-    OUTPUTS:
-        mu: the leading order eigenvalue of the transfer matrix E
-        r: the right leading order eigenvector of the transfer matrix E
+    ===========
+    Inputs:
+        E (np.ndarray): Transfer matrix E
+    ===========
+    Outputs:
+        mu (np.complex128): the leading order eigenvalue of the transfer matrix E
+        r (np.ndarray): the right leading order eigenvector of the transfer matrix E
     '''
     evals, evecs = eig(E, left=False,right=True)
     sorted_evals = sorted(evals,reverse=True,key= np.abs)
@@ -112,12 +108,13 @@ def left_fixed_point(E, all_evals=False):
     '''
     Calculate the left fixed point of a transfer matrix E
     E.shape = (N, N)
-    INPUTS:
-        E: numpy.ndarray
-            Transfer matrix E
-    OUTPUTS:
-        mu: the leading order eigenvalue of the transfer matrix E
-        l: the left leading order eigenvector of the transfer matrix E
+    ===========
+    Inputs:
+        E (np.ndarray): Transfer matrix E
+    ===========
+    Outputs:
+        mu (np.complex128): the leading order eigenvalue of the transfer matrix E
+        l (np.ndarray): the left leading order eigenvector of the transfer matrix E
     '''
     evals, evecs = eig(E, left=True,right=False)
     sorted_evals = sorted(evals,reverse=True,key= np.abs)
@@ -126,7 +123,7 @@ def left_fixed_point(E, all_evals=False):
 
     return mu, l
 
-def map_AWB(A,W,B):
+def map_AWB(tensorA,operator,tensorB):
     '''Contract A, W, B as follows
     i -- A -- j    ,   k -- B -- l,    | |
          |                  |           W
@@ -138,27 +135,28 @@ def map_AWB(A,W,B):
          |    |
     k -- B -- B -- l
     where the shape of the output is (i*k, j*l)
-    Parameters
-    ----------
-    INPUTS
-    A, W, B: numpy.ndarray
-        A,B: iMPS tensors A & B
-        W: evolution operator
-    OUTPUTS:
-        Mixed transfer matrix of the iMPS tensors A and B with evolution operator W
-    '''
-    i,_,j = A.shape
-    k,_,l = B.shape
-    tm = np.einsum('inm,moj,prno,kpq,qrl -> ikjl', A,A,W,B.conj(),B.conj())
+    ===========
+    Inputs 
+	    tensorA, tensorB (np.ndarray): Two iMPS tensors A & B with shape (2,2,2)
+        operator (np.ndarray): 2 qubit unitary operator with shape (2,2,2,2)
+    ===========
+    Outputs:
+        (np.ndarray) Mixed transfer matrix of the iMPS tensors A and B
+	'''
+    i,_,j = tensorA.shape
+    k,_,l = tensorB.shape
+    tm = np.einsum('inm,moj,prno,kpq,qrl -> ikjl', tensorA,tensorA,operator,tensorB.conj(),tensorB.conj())
     return tm.reshape(i*k, j*l)
 
 def param_to_tensor(params):
     '''
     Converts the unitary parameterised by 'params' into an MPS tensor
-    INPUTS:
-        params: (np.ndarray) array of the parameters used to create the unitary
-    OUTPUTS:
-        A: (np.ndarray) iMPS tensor created from parameters 'params'
+    ===========
+    Inputs 
+        params (np.array): array of the parameters used to create the unitary
+    ===========
+    Outputs 
+        A (np.ndarray): iMPS tensor created from parameters 'params'
     '''
     a = stateAnsatzXZ(params)
     A = unitary_to_RCF_tensor(cirq.unitary(a))
@@ -174,12 +172,14 @@ def expectation(paramA,paramB,g,dt):
     k -- B -- B -- l
     where A is generated from by U(t) (parameterised by paramA), and B by U(t+dt) (parameterised by paramB)
     and g = g in the TFIM Hamiltonian used to create the evolution operator W
-    INPUTS:
-        paramA,paramB: (np.ndarray) parameter sets A & B which parametrize iMPS tensors A & B
-        g: (float) the transverse field magnitude
-        dt: (float) the time step
-    OUTPUTS:
-        overlap: (float) the expectation value of the time evolution operator with the TFIM Hamiltonian and iMPS tensor A and B
+    ===========
+    Inputs:
+        paramA,paramB (np.array): parameter sets A & B which parametrize iMPS tensors A & B
+        g (float): the transverse field magnitude
+        dt (float): the time step
+    ===========
+    Outputs:
+        overlap (float): the expectation value of the time evolution operator with the TFIM Hamiltonian and iMPS tensor A and B
     '''
     A = param_to_tensor(paramA)
     B = param_to_tensor(paramB)
@@ -195,10 +195,12 @@ def overlap(params1,params2):
          |      
     k -- B -- l
     where A is parameterised by params1 and B by params2 
-    INPUTS:
-        paramA,paramB: (np.ndarray) parameter sets A & B which parametrize iMPS tensors A & B
-    OUTPUTS:
-        overlap: (float) the overlap between two iMPS with tensors A & B respectively
+    ===========
+    Inputs:
+        paramA,paramB (np.array): parameter sets A & B which parametrize iMPS tensors A & B
+    ===========
+    Outputs:
+        overlap (float): the overlap between two iMPS with tensors A & B respectively
     '''
     A = param_to_tensor(params1)
     B = param_to_tensor(params2)
@@ -206,11 +208,29 @@ def overlap(params1,params2):
     overlap = abs(right_fixed_point(E)[0])**2
     return overlap
 
-def linFit(a,b):
-    '''Calculates a linear extrapolation from the two previous points a and b '''
-    return 2*b - a
+def linFit(ya,yb):
+    '''
+    Calculates a linear extrapolation from the two previous points a and b with a fixed x axis gap between the two points of 0.2
+    ===========
+    Inputs:
+        ya,yb (np.array,float or int): the y values of the points to be extrapolated from 
+    ===========
+    Outputs:
+        The extrapolated y value (np.array,float or int)
+    '''
+    return 2*yb - ya
 
 def linExtrap(xa,xb,ya,yb,x):
-    '''Calculates a generic linear extrapolation'''
+    '''
+    Calculates a generic linear extrapolation from two previous points a and b
+    ===========
+    Inputs:
+        xa,xb (float or int): the x values of the points to be extrapolated from
+        ya,yb (np.array,float or int): the y values of the points to be extrapolated from 
+        x (float or int): the x value of the point extrapolating to
+    ===========
+    Outputs:
+        y (np.array,float or int): The extrapolated y value 
+    '''
     y = ya + (x-xa)*(yb-ya)/(xb-xa)    
     return y
