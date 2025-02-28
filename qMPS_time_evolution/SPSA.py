@@ -1,6 +1,4 @@
 import numpy as np
-import warnings
-from scipy import stats
 from scipy.optimize import OptimizeResult
 from classical import expectation
 

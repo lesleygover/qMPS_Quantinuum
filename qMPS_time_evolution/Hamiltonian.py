@@ -58,9 +58,11 @@ class Hamiltonian:
 def evolution_op(g,dt):
     '''
     TFIM evolution operator for use in transfer matrix simulation
+    ========
     Inputs:
         g (float): coupling strength
         dt (float): length of timestep
+    ========
     Outputs:
         W (np.array): the evolution operator in shape (2,2,2,2)
     '''
@@ -72,9 +74,11 @@ def evolution_op(g,dt):
 def evolution_circuit_op(g,dt):
     '''
     TFIM evolution operator for use in circuit simulation
+    ========
     Inputs:
         g (float): coupling strength
         dt (float): length of timestep
+    ========
     Outputs:
         W (np.array): the evolution operator in shape (4,4)
     '''

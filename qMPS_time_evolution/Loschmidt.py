@@ -1,8 +1,6 @@
 import numpy as np
-from scipy.linalg import expm
 from scipy.integrate import quad
 
-import cirq
 import matplotlib.pyplot as plt
 
 '''Code to calculate the exact Loschmidt echo'''
