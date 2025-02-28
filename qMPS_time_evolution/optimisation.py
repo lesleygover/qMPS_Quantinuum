@@ -297,7 +297,7 @@ def completeOptimise(machine,circuit_type,xInit,p0,p1,path_to_savefile,iteration
     plt.legend()
     plt.xlabel('time')
     plt.ylabel(r'-log$|\langle\psi(t)|\psi(0)\rangle|^2$')
-    plt.savefig(str(path_to_savefile)+'_loschmidtEcho_'+timestamp+'.png')
+    plt.savefig(str(path_to_savefile)+'_loschmidtEcho_'+timestamp+'.svg')
     if show == True:
         plt.show()
 

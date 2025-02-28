@@ -1,7 +1,12 @@
 import cirq
 
 class stateAnsatzXZ(cirq.Gate):
-	"""8-parameter shallow factorization of a unitary using XZ gates"""
+	"""
+    8-parameter shallow factorization of a 2 qubit unitary using XZ gates
+    =============
+    Inputs:
+        params (np.array): parameters which parametrize the unitary
+    """
 	def __init__(self, params):
 		self.params = params
 
@@ -26,7 +31,12 @@ class stateAnsatzXZ(cirq.Gate):
 		return ['U1','U2']
 
 class timeLikeAnsatzXZ(cirq.Gate):
-    """8-parameter shallow factorization of a unitary using XZ gates"""
+    """
+    8-parameter shallow factorization of a 2 qubit unitary using XZ gates
+    =============
+    Inputs:
+        params (np.array): parameters which parametrize the unitary
+    """
     def __init__(self, params):
         self.params = params
 
@@ -52,7 +62,11 @@ class timeLikeAnsatzXZ(cirq.Gate):
         return ['U1','U2']
 
 class UnitaryAnsatz(cirq.Gate):
-    """Gate defined using a unitary matrix"""
+    """Gate defined using a unitary matrix
+    =============
+    Inputs:
+        U (np.array): unitary which defines the 2 qubit unitary gate
+    """
 
     def __init__(self, U):
         self.U = U

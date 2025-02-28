@@ -1,7 +1,7 @@
 import numpy as np
 
 def bitwiseAND(results):
-    '''Returns the bitwise AND of the two sets of measurement results'''
+    '''Returns the bitwise AND of the two sets of measurement results from running on Quantinuum device'''
     keys = [key for key in results.keys()]
     length = int(len(results[keys[0]]))
     
