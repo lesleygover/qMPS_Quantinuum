@@ -7,9 +7,9 @@ import json
 from datetime import datetime
 
 from SPSA import minimizeSPSA
-from classical import expectation, overlap, linFit
+from classical import expectation, overlap, linFit, linExtrap
 from Loschmidt import loschmidt_paper
-from circuits import evolutionCircuit, doubledEvolutionCircuit, tripledEvolutionCircuit
+from circuits import evolutionCircuit, higherTrotterQasm
 from processing import evolSwapTestRatio
 
 g0, g1 = 1.5, 0.2
@@ -61,7 +61,6 @@ def evolutionSimulation(params, set_params, shots, machine, circuit_type, path_t
                             name=str(circuit_type)+'EvolutionCircuitSPSA')
     n = 0
     i = 0
-    
     # check something has stopped on the machine
     ## raises exception if result retrieval takes too long
     while n != n_len:
@@ -303,3 +302,132 @@ def completeOptimise(machine,circuit_type,xInit,p0,p1,path_to_savefile,iteration
         plt.show()
 
     return params,losch_values
+
+def evolution2ndOrderSimulation(params,set_params,shots, machine, path_to_savefile, timestamp):
+    '''
+    Cost function for 2nd Trotter order iMPS evolution, submits job to Quantinuum processor then evaluates fidelity density
+    
+    =============
+    Inputs: 
+        params (np.array): parameters calculated by optimiser for timestep t+dt
+        set_params (np.array): parameters of current timestep t
+        shots (int): number of shots to evalute the circuit with
+        machine (str):
+            for emulator: machine= 'H1-1E'
+            for actual hardware: machine = 'H1-1' or 'H1-2'
+        path_to_savefile (str): the path to and name of the file to save the data to incase of failure
+        timestamp (str): timestamp to append to filename (calculated in the optimise function)
+    =============
+    Ouputs:     
+        cost (float): the negative of the overlap between the evolved iMPS state and the new iMPS state
+    '''
+    qapi = QAPI(machine=machine)
+    
+    job_id = qapi.submit_job(higherTrotterQasm(set_params,params), 
+                             shots=shots, 
+                             machine=machine, # emulator = 'H1-1E'
+                             name='higherTrotterCircuitSPSA')
+    
+    n = 0
+    i = 0
+    # check something has stopped on the machine
+    ## raises exception if result retrieval takes too long
+    while n != 2000:
+        results = qapi.retrieve_job(job_id)
+        n = len(results['results']['m0'])+len(results['results']['m1'])
+        time.sleep(3)
+        i += 1
+        if i == 20:
+            raise Exception('Results not fully populated after 1 minute')
+            
+        cost = evolSwapTestRatio(results['results'],7)
+        ### SAVE THE JOB ID TO FILE
+        with open(str(path_to_savefile)+'_'+timestamp+'.json', 'r+') as file:
+            opt_tracker = json.load(file)
+            opt_tracker['job_id'].append(job_id)
+            opt_tracker['measurement_data'].append(results['results'])
+            opt_tracker['exp_cost'].append(cost)
+            file.seek(0)
+            json.dump(opt_tracker, file, indent=4)
+    return -cost
+
+def optimise2ndOrder(machine,p0,p1,timestep,path_to_savefile,t_iminus1,t_i,t_iplus1,iterations=6,shots=1000,a=0.02,c=0.35,show=True):
+    '''
+    Optimise just one time step 
+    - Uses a linear extrapolation to make an initial guess of the next parameter
+    - Then uses SPSA to further optimise the parameter to find the next step of the evolution
+    =============
+    Inputs:
+        machine (str):
+            for emulator: machine= 'H1-1E'
+            for actual hardware: machine = 'H1-1' or 'H1-2'
+        p0,p1 (np.array): the parameters for the previous two time steps (used to do the fitting)
+        timestep (str): which timestep is being evolved from
+        path_to_savefile (str): the name of the file to save the data to incase of failure
+        t_iminus1 (float): time at timestep previous
+        t_i (float): current time
+        t_iplus1 (float): time at next timestep
+        iterations (int): the number of iterations of the SPSA algorithm to run (default=6)
+        shots (int): the number of shots with which to evaluate the cost function (default = 1000)
+        a,c (float): parameters of SPSA: used to adjust the search parameters (default a = 0.02, c = 0.35) 
+        show (bool): Set True to see the Loschmidt echo plotted for the current and updated timestep (default=True)
+    =============
+    Outputs:
+        new_param_guess (np.array): array of the updated set of parameters
+    Also (if show=True) shows a plot of the Loschmidt echo with this time evolution step plotted on it for comparison. Serves as a check the evolution is progresssing correctly
+    '''
+    qapi = QAPI(machine=machine) # emulator = 'H1-1E',  machine = 'H1-1' or 'H1-2'?
+    now = datetime.now()
+    timestamp= now.strftime("%Y%m%dT%H%M%S")
+    print('Associated timestamp: ' + timestamp)
+    
+    def callback_fn(xk):
+        cost = expectation(set_params,xk,g,dt)
+        loschmidt = overlap(xInit,xk)
+        params = list(xk)        
+        with open(str(path_to_savefile)+'_'+timestamp+'.json', 'r+') as file:
+            opt_tracker = json.load(file)
+            opt_tracker['actual_cost'].append(cost)
+            opt_tracker['losch_overlap'].append(loschmidt)
+            opt_tracker['params'].append(params)
+            file.seek(0)
+            json.dump(opt_tracker, file, indent=4)
+    
+    xInit = x0 # the parameters at time t = 0 for calculating the Loschmidt echo
+    
+    
+    data = {
+        'job_id': [],
+        'measurement_data': [],
+        'exp_cost': [],
+        'actual_cost': [],
+        'losch_overlap': [],
+        'params': [],
+    }
+    json_data = json.dumps(data)
+    with open(str(path_to_savefile)+'_'+timestamp+'.json', 'w') as file:
+        file.write(json_data)
+    
+    g = 0.2
+    dt = 0.5
+    
+    set_params = p1
+    param_guess = linExtrap(t_iminus1,t_i,p0,p1,t_iplus1)
+    #param_guess = p1
+
+    # SPSA optmisation
+    opt = minimizeSPSA(evolution2ndOrderSimulation,x0 = param_guess, args = [set_params, shots, machine, path_to_savefile, timestamp],  niter = iterations, paired=False,a=a, c=c, callback=callback_fn, restart_point=0)
+    
+    
+    new_param_guess = np.array(opt.x)
+    if show == True:
+        tm_losch = [overlap(xInit,params) for params in paramData]
+        plt.plot(ltimes,correct_ls, ls = ':', label = 'exact')
+        plt.plot([0.2*i for i in range(len(tm_losch))],-np.log(tm_losch), ls = ':', label = 'tm simulation')
+        plt.plot([timestep, timestep+dt],-np.log([overlap(xInit,p1),overlap(xInit,new_param_guess)]), label = 'emulator simulation', marker = 'x')
+        plt.xlim(-0.1,2.1)
+        plt.legend()
+        plt.xlabel('time')
+        plt.ylabel(r'-log$|\langle\psi(t)|\psi(0)\rangle|^2$')
+        plt.show()
+    return new_param_guess

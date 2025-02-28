@@ -209,3 +209,8 @@ def overlap(params1,params2):
 def linFit(a,b):
     '''Calculates a linear extrapolation from the two previous points a and b '''
     return 2*b - a
+
+def linExtrap(xa,xb,ya,yb,x):
+    '''Calculates a generic linear extrapolation'''
+    y = ya + (x-xa)*(yb-ya)/(xb-xa)    
+    return y

@@ -166,3 +166,76 @@ creg m5[5];  // Measurement: psi3
     else:
         raise Exception("circuit_type must be one of: 'single', 'double', or 'triple'")
     return openqasm
+
+def evolOp2ndOrderQASM(qubits):
+    '''
+    Produces openqasm string for 2nd order evolution operator gates
+    =============
+    Inputs: 
+        qubits (list): list number which two qubits the gates should act on
+    =============
+    Outputs: 
+        evolOp2ndOrderQASM (str): openqasm string of evolution operator
+    '''
+    evolOp2ndOrder_qasm = f"""
+// 2nd order evolution operator: TFIM Hamiltonian g = 0.2, dt = 0.5
+
+rz(pi*-0.5) q[{qubits[0]}];
+ry(pi*-0.0081276962) q[{qubits[0]}];
+rz(pi*0.987084481) q[{qubits[1]}];
+ry(pi*0.1788599049) q[{qubits[1]}];
+rz(pi*0.5152588931) q[{qubits[1]}];
+cx q[{qubits[0]}],q[{qubits[1]}];
+rx(pi*0.999965997) q[{qubits[0]}];
+rz(pi*0.5) q[{qubits[0]}];
+rz(pi*-0.6332094846) q[{qubits[1]}];
+ry(pi*0.5175620031) q[{qubits[1]}];
+rz(pi*0.5822619028) q[{qubits[1]}];
+cx q[{qubits[0]}],q[{qubits[1]}];
+rz(pi*0.5) q[{qubits[0]}];
+ry(pi*0.9918723038) q[{qubits[0]}];
+rz(pi*0.5) q[{qubits[0]}];
+rz(pi*-0.5096005063) q[{qubits[1]}];
+ry(pi*0.3213702675) q[{qubits[1]}];
+rz(pi*-0.9948896231) q[{qubits[1]}];
+"""
+    return evolOp2ndOrder_qasm
+
+def higherTrotterQasm(param_set1,param_set2):
+    '''
+    Returns a string of QASM code, with the 2nd order evolution circuit for g=0.2 in TFIM Hamiltonian and dt=0.5
+    =============
+    Inputs:
+        param_set1 (np.array): An array of the first set of parameters
+        param_set2 (np.array): An array of the second set of parameters
+        circuit_type (str): 
+            'single': one copy of the circuit per circuit
+            'double': two copies of the circuit per circuit
+            'triple': three copies of the circuit per circuit
+    =============
+    Outputs:
+        openqasm (str): openqasm string of parametrised circuit
+    '''
+    params1 = []
+    for array1 in param_set1:
+        newArray1 = array1/np.pi
+        params1.append(newArray1)
+
+    params2 = []
+    for array2 in param_set2:
+        newArray2 = array2/np.pi
+        params2.append(newArray2)
+
+    circuit = UGate(params1,[0,1])+UGate(params1,[7,6])+swapMeasureQASM([0,7],[0,1],0)+UGate(params1,[1,3])+UGate(params2,[6,4])+UGate(params2,[4,7])+UGate(params1,[3,0])+evolOp2ndOrderQASM([6,4])+evolOp2ndOrderQASM([1,3])+swapMeasureQASM([3,4],[0,1],1)+UGate(params2,[7,5])+UGate(params1,[0,2])+UGate(params2,[5,4])+UGate(params1,[2,3])+evolOp2ndOrderQASM([7,5])+evolOp2ndOrderQASM([0,2])+evolOp2ndOrderQASM([1,2])+swapMeasureQASM([2,5],[0,1],2)+swapMeasureQASM([1,6],[0,1],3)+UGate(params2,[4,6])+UGate(params1,[3,1])+UGate(params2,[6,5])+UGate(params1,[1,2])+evolOp2ndOrderQASM([4,6])+evolOp2ndOrderQASM([3,1])+evolOp2ndOrderQASM([0,1])+swapMeasureQASM([3,4],[0,1],4)+swapMeasureQASM([1,6],[0,1],5)+swapMeasureQASM([0,7],[0,1],6)
+
+    openqasm = f"""
+OPENQASM 2.0;
+include "qelib1.inc";
+
+// Qubits: [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)]
+qreg q[8];
+creg m0[7]; // Measurement: phi
+creg m1[7]; // Measurement: psi
+""" + circuit
+    
+    return openqasm
