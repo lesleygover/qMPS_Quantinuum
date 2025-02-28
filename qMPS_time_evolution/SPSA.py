@@ -48,6 +48,8 @@ def minimizeSPSA(func, x0, args=(), bounds=None, niter=100, paired=True,
         or every step if niter<100.
     callback: callable
         called after each iteration, as callback(xk), where xk are the current parameters
+    restart_point: int
+        how many updates in the restart from, called if there has been a failure while optimising, optimiser restarts from parameters it had reached before failure point
     Returns
     -------
     `scipy.optimize.OptimizeResult` object

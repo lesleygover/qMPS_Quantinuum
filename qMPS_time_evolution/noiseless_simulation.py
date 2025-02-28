@@ -183,7 +183,7 @@ def swapTestRatio(bitstrings, length):
 
 	return overlap**2
 
-def evolSwapTestRatio(bitstrings, length):
+def evolSwapTestRatio_sim(bitstrings, length):
     """
     Calculates ratio of the swap tests on the circuit results for length and length-2
     - between length and length-2 as is a two-site transfers matrix with the evolution operator
@@ -237,7 +237,7 @@ def noiseless_cost_func(params,set_params,path_to_savefile,timestamp,shots):
     length = 2
     swapTestLength = 5
     tm_cost = expectation(set_params,params,g,dt)
-    cost = evolSwapTestRatio(calc_and(simulate_noiseless(fastEvolutionCircuit(set_params,params,g,dt,length),shots)),swapTestLength)
+    cost = evolSwapTestRatio_sim(calc_and(simulate_noiseless(fastEvolutionCircuit(set_params,params,g,dt,length),shots)),swapTestLength)
     
     with open(str(path_to_savefile)+'_'+timestamp+'.json', 'r+') as file:
         opt_tracker = json.load(file)

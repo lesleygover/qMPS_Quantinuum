@@ -1,7 +1,15 @@
 import numpy as np
 
 def bitwiseAND(results):
-    '''Returns the bitwise AND of the two sets of measurement results from running on Quantinuum device'''
+    '''
+    Returns the bitwise AND of the two sets of measurement results from running on Quantinuum device
+    =============
+    Inputs:
+        results: result data from device run
+    =============
+	Outputs:
+        bitstrings (np.array): bitstrings of the bitwise ANDs
+    '''
     keys = [key for key in results.keys()]
     length = int(len(results[keys[0]]))
     
@@ -19,7 +27,14 @@ def evolSwapTestRatio(results, length):
     Calculates the overlap from the measurement results
         Performs the swap test on the bitstring produced by bitwiseAND of the measurement results by checking the parity and counting when it is even
         Calculates the ratio of the that of the full circuit of length 'length' and that with one transfer matrix removed 
-    '''
+    =============
+    Inputs:
+        results: result data from device run
+        length (int): how many pairs of measurements there are per circuit
+    =============
+	Outputs:
+        overlap (float): the overlap between the two states being measured
+	'''
     bitstrings = bitwiseAND(results)
     shots = np.size(bitstrings,0)
     #length = len(bitstrings[0])
@@ -38,6 +53,6 @@ def evolSwapTestRatio(results, length):
     overlap_full = np.sqrt(np.abs(2*prob_full - 1))
     overlap_minus = np.sqrt(np.abs(2*prob_minus - 1))
 
-    overlap = overlap_full/overlap_minus
+    overlap = (overlap_full/overlap_minus)**2
 
-    return overlap**2
+    return overlap
