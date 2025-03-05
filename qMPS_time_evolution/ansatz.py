@@ -1,4 +1,5 @@
 import cirq
+import numpy as np
 
 class stateAnsatzXZ(cirq.Gate):
 	"""
@@ -69,6 +70,9 @@ class UnitaryAnsatz(cirq.Gate):
     """
 
     def __init__(self, U):
+        # check U is a unitary
+        if not np.allclose(np.eye(U.shape[0]), U @ U.conj().T):
+            raise ValueError("Input matrix must be a unitary")
         self.U = U
 
     def num_qubits(self) -> int:
