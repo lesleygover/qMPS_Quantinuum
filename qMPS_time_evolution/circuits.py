@@ -1,31 +1,5 @@
 import numpy as np
-
-def UGate(params,qubits):
-    '''
-    Produces openqasm string for parametrised unitary gate
-    =============
-    Inputs: 
-        params (np.array): parameters of the unitary
-        qubits (list): list number which two qubits the gate should act on
-    =============
-    Outputs: 
-        UGate_qasm (str): openqasm string of parametrised unitary
-    '''
-    UGate_qasm = f"""
-// Gate: state ansatz gate applied to qubits {qubits[0]} {qubits[1]}
-
-rz(pi*{params[0]}) q[{qubits[0]}];
-rx(pi*{params[1]}) q[{qubits[0]}];
-rz(pi*{params[2]}) q[{qubits[1]}];
-rx(pi*{params[3]}) q[{qubits[1]}];
-cx q[{qubits[0]}],q[{qubits[1]}];
-rz(pi*{params[4]}) q[{qubits[0]}];
-rx(pi*{params[5]}) q[{qubits[0]}];
-rz(pi*{params[6]}) q[{qubits[1]}];
-rx(pi*{params[7]}) q[{qubits[1]}];
-cx q[{qubits[0]}],q[{qubits[1]}];
-"""
-    return UGate_qasm
+from ansatz import QasmStateAnsatzXZ as UGate
 
 def swapMeasureQASM(qubits,cbits,swap_test_number):
     '''

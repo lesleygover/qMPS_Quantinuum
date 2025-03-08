@@ -1,6 +1,47 @@
 import cirq
 import numpy as np
 
+def QasmStateAnsatzXZ(params, qubits):
+    '''
+    Produces OpenQASM string for a parametrized two-qubit ansatz with RZ, RX, and CX gates.
+    - Implements stateAnsatzXZ gate
+    =============
+    Inputs:
+        params (np.ndarray or list): eight parameters [θ1, θ2, θ3, θ4, θ5, θ6, θ7, θ8] that define the rotation angles (in units of π) of the gate.
+        qubits  (list or tuple): List containing the indices of the two qubits the gate acts on [q1, q2].
+    =============
+    Outputs
+        UGate_qasm (str): OpenQASM string representing the parametrized unitary circuit.
+    =============
+    Raises
+        ValueError: If params does not contain exactly 8 parameters or qubits does not contain exactly 2 qubit indices.
+    '''
+    # Input validation
+    if len(params) != 8:
+        raise ValueError(f"Expected 8 parameters, got {len(params)}")
+    if len(qubits) != 2:
+        raise ValueError(f"Expected 2 qubit indices, got {len(qubits)}")
+    
+    # qubit indices
+    q0, q1 = qubits[0], qubits[1]
+    
+    # Build the QASM string 
+    UGate_qasm = f"""
+// Gate: Two-qubit state ansatz XZ applied to qubits {q0} and {q1}
+
+rz(pi*{params[0]}) q[{q0}]; 
+rx(pi*{params[1]}) q[{q0}];  
+rz(pi*{params[2]}) q[{q1}];  
+rx(pi*{params[3]}) q[{q1}];  
+cx q[{q0}],q[{q1}]; 
+rz(pi*{params[4]}) q[{q0}];  
+rx(pi*{params[5]}) q[{q0}];  
+rz(pi*{params[6]}) q[{q1}];  
+rx(pi*{params[7]}) q[{q1}]; 
+cx q[{q0}],q[{q1}]; 
+"""    
+    return UGate_qasm
+
 class stateAnsatzXZ(cirq.Gate):
     """
     8-parameter shallow factorization of a 2 qubit unitary using XZ gates:
