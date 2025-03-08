@@ -87,6 +87,74 @@ def evolution_circuit_op(g,dt):
     W = expm(-2j*dt*H)
     return W
 
+def evolOpQASM(qubits):
+    '''
+    Produces openqasm string for evolution operator gates
+    =============
+    Inputs: 
+        qubits (list): list number which two qubits the gates should act on
+    =============
+    Outputs: 
+        evolOp_qasm (str): openqasm string of evolution operator
+    '''
+    evolOp_qasm = f"""
+// evolution operator: TFIM Hamiltonian g = 0.2, dt = 0.2
+
+rz(pi*-0.5) q[{qubits[0]}];
+ry(pi*0.986543146) q[{qubits[0]}];
+rz(pi*0.9999821894) q[{qubits[1]}];
+ry(pi*0.499579154) q[{qubits[1]}];
+rz(pi*0.5134568602) q[{qubits[1]}];
+cx q[{qubits[0]}],q[{qubits[1]}];
+rz(pi*0.5) q[{qubits[0]}];
+rz(pi*-0.4996979791) q[{qubits[1]}];
+ry(pi*-0.999854961) q[{qubits[0]}];
+ry(pi*0.5001276019) q[{qubits[1]}];
+rz(pi*0.2454973974) q[{qubits[1]}];
+cx q[{qubits[0]}],q[{qubits[1]}];
+rz(pi*-0.5) q[{qubits[0]}];
+rz(pi*-0.9900456689) q[{qubits[1]}];
+ry(pi*0.0134568602) q[{qubits[0]}];
+ry(pi*0.0134634469) q[{qubits[1]}];
+rz(pi*-0.5) q[{qubits[0]}];
+rz(pi*-0.5099632501) q[{qubits[1]}];
+"""
+    return evolOp_qasm
+
+def evolOp2ndOrderQASM(qubits):
+    '''
+    Produces openqasm string for 2nd order evolution operator gates
+    =============
+    Inputs: 
+        qubits (list): list number which two qubits the gates should act on
+    =============
+    Outputs: 
+        evolOp2ndOrderQASM (str): openqasm string of evolution operator
+    '''
+    evolOp2ndOrder_qasm = f"""
+// 2nd order evolution operator: TFIM Hamiltonian g = 0.2, dt = 0.5
+
+rz(pi*-0.5) q[{qubits[0]}];
+ry(pi*-0.0081276962) q[{qubits[0]}];
+rz(pi*0.987084481) q[{qubits[1]}];
+ry(pi*0.1788599049) q[{qubits[1]}];
+rz(pi*0.5152588931) q[{qubits[1]}];
+cx q[{qubits[0]}],q[{qubits[1]}];
+rx(pi*0.999965997) q[{qubits[0]}];
+rz(pi*0.5) q[{qubits[0]}];
+rz(pi*-0.6332094846) q[{qubits[1]}];
+ry(pi*0.5175620031) q[{qubits[1]}];
+rz(pi*0.5822619028) q[{qubits[1]}];
+cx q[{qubits[0]}],q[{qubits[1]}];
+rz(pi*0.5) q[{qubits[0]}];
+ry(pi*0.9918723038) q[{qubits[0]}];
+rz(pi*0.5) q[{qubits[0]}];
+rz(pi*-0.5096005063) q[{qubits[1]}];
+ry(pi*0.3213702675) q[{qubits[1]}];
+rz(pi*-0.9948896231) q[{qubits[1]}];
+"""
+    return evolOp2ndOrder_qasm
+
 class Wgate0202(cirq.Gate):
     """ 
     W time evolution operator for TFIM with g = 0.2, t = 0.2
