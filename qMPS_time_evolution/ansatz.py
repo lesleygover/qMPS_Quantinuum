@@ -8,19 +8,34 @@ def QasmStateAnsatzXZ(params, qubits):
     =============
     Inputs:
         params (np.ndarray or list): eight parameters [θ1, θ2, θ3, θ4, θ5, θ6, θ7, θ8] that define the rotation angles (in units of π) of the gate.
-        qubits  (list or tuple): List containing the indices of the two qubits the gate acts on [q1, q2].
+        qubits  (np.ndarray, list or tuple): List containing the indices of the two qubits the gate acts on [q1, q2].
     =============
     Outputs
         UGate_qasm (str): OpenQASM string representing the parametrized unitary circuit.
     =============
     Raises
         ValueError: If params does not contain exactly 8 parameters or qubits does not contain exactly 2 qubit indices.
+        TypeError: If qubit indices are not integers.
+        ValueError: If qubit indices are negative.
     '''
+    # convert numpy arrays to lists
+    if isinstance(params, np.ndarray):
+        params = params.tolist()
+    if isinstance(qubits, np.ndarray):
+        qubits = qubits.tolist()
+    
     # Input validation
+    ## check length of params & qubits
     if len(params) != 8:
         raise ValueError(f"Expected 8 parameters, got {len(params)}")
     if len(qubits) != 2:
         raise ValueError(f"Expected 2 qubit indices, got {len(qubits)}")
+    ## check qubit indices are integer
+    if not all(isinstance(q, (int, np.integer)) for q in qubits):
+        raise TypeError("All qubit indices must be integers")
+    ## check qubit indices are positive
+    if any(q < 0 for q in qubits):
+        raise ValueError("Qubit indices must be non-negative")
     
     # qubit indices
     q0, q1 = qubits[0], qubits[1]
