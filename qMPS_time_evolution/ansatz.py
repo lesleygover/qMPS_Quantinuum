@@ -2,17 +2,27 @@ import cirq
 import numpy as np
 
 class stateAnsatzXZ(cirq.Gate):
-	"""
-    8-parameter shallow factorization of a 2 qubit unitary using XZ gates
-    =============
-    Inputs:
-        params (np.array): parameters which parametrize the unitary
     """
-	def __init__(self, params):
-		self.params = params
+    8-parameter shallow factorization of a 2 qubit unitary using XZ gates:
+        - uses single-qubit rotations around X and Z axes and 2 CNOT gates.
+        - space-like gate ansatz
+    =============
+    Attributes:
+        params (np.ndarray): Array of 8 parameters which parametrize the unitary, requires exactly 8 parameters.
+    =============
+    Raises:
+        ValueError: If params does not contain exactly 8 values.
+        ValueError: If number of qubits gate is applied to isn't 2
+    """
+    def __init__(self, params):
+        if len(params) != 8:
+             raise ValueError(f"Expected array of 8 parameters, got {len(params)} parameters")
+        self.params = params
 
-	def _decompose_(self, qubits):
-		return [
+    def _decompose_(self, qubits):
+        if len(qubits) != 2:
+            raise ValueError(f"Expected 2 qubits, got {len(qubits)}")
+        return [
 			cirq.rz(self.params[0]).on(qubits[0]),
 			cirq.rx(self.params[1]).on(qubits[0]),
 			cirq.rz(self.params[2]).on(qubits[1]), 
@@ -25,23 +35,33 @@ class stateAnsatzXZ(cirq.Gate):
 			cirq.CNOT(*qubits),
 		]
 
-	def num_qubits(self):
-		return 2
+    def num_qubits(self):
+        return 2
 
-	def _circuit_diagram_info_(self, args):
-		return ['U1','U2']
+    def _circuit_diagram_info_(self, args):
+    	return ['XZ₁','XZ₂']
 
 class timeLikeAnsatzXZ(cirq.Gate):
     """
-    8-parameter shallow factorization of a 2 qubit unitary using XZ gates
+    8-parameter shallow factorization of a 2 qubit unitary using XZ gates:
+        - uses single-qubit rotations around X and Z axes and 2 CNOT gates.
+        - space-like gate ansatz
     =============
-    Inputs:
-        params (np.array): parameters which parametrize the unitary
+    Attributes:
+        params (np.ndarray): Array of 8 parameters which parametrize the unitary, requires exactly 8 parameters.
+    =============
+    Raises:
+        ValueError: If params does not contain exactly 8 values.
+        ValueError: If number of qubits is applied to isn't 2
     """
     def __init__(self, params):
+        if len(params) != 8:
+            raise ValueError(f"Expected array of 8 parameters, got {len(params)} parameters")
         self.params = params
 
     def _decompose_(self, qubits):
+        if len(qubits) != 2:
+            raise ValueError(f"Expected 2 qubits, got {len(qubits)}")
         return [
             cirq.rz(self.params[0]).on(qubits[0]),
             cirq.rx(self.params[1]).on(qubits[0]),
@@ -60,19 +80,36 @@ class timeLikeAnsatzXZ(cirq.Gate):
         return 2
 
     def _circuit_diagram_info_(self, args):
-        return ['U1','U2']
+        return ['TXZ₁','TXZ₂']
 
 class UnitaryAnsatz(cirq.Gate):
-    """Gate defined using a unitary matrix
+    """
+    Two-qubit gate directly defined by a 4x4 unitary matrix.
+    =============
+    Attributes:
+        U (np.ndarray): 4x4 unitary matrix defining the gate operation.
     =============
     Inputs:
-        U (np.array): unitary which defines the 2 qubit unitary gate
+        U (np.ndarray): 4x4 unitary matrix defining the gate operation.
+    =============
+    Raises:
+        ValueError: If U is not a unitary matrix or has wrong dimensions.
     """
 
     def __init__(self, U):
-        # check U is a unitary
-        if not np.allclose(np.eye(U.shape[0]), U @ U.conj().T):
-            raise ValueError("Input matrix must be a unitary")
+        '''
+        Initialise the matrix and check it is a 4x4 unitary
+        '''
+        U = np.asarray(U)
+
+        # Check matrix dimensions
+        if U.shape != (4, 4):
+            raise ValueError(f"Expected 4x4 matrix, got shape {U.shape}")
+        
+        # Check unitarity
+        if not np.allclose(np.eye(4), U @ U.conj().T):
+            raise ValueError("Input matrix must be unitary (UU† = I)")
+        
         self.U = U
 
     def num_qubits(self) -> int:
@@ -82,5 +119,5 @@ class UnitaryAnsatz(cirq.Gate):
         return self.U
 
     def _circuit_diagram_info_(self, args):
-        return ['U','U']
+        return ['U₁','U₂']
     

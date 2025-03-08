@@ -208,10 +208,6 @@ def higherTrotterQasm(param_set1,param_set2):
     Inputs:
         param_set1 (np.array): An array of the first set of parameters
         param_set2 (np.array): An array of the second set of parameters
-        circuit_type (str): 
-            'single': one copy of the circuit per circuit
-            'double': two copies of the circuit per circuit
-            'triple': three copies of the circuit per circuit
     =============
     Outputs:
         openqasm (str): openqasm string of parametrised circuit
