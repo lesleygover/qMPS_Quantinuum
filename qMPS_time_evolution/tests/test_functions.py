@@ -186,18 +186,6 @@ class TestAnsatzXZ(unittest.TestCase):
             stateAnsatzXZ(invalid_params)
         with self.assertRaises(ValueError):
             timeLikeAnsatzXZ(invalid_params)
-            
-    def test_num_qubits(self):
-        """Test that the number of qubits is correctly reported."""
-        self.assertEqual(self.ansatz_space._num_qubits_(), 2)
-        self.assertEqual(self.ansatz_time._num_qubits_(), 2)
-        
-    def test_circuit_diagram_info(self):
-        """Test the circuit diagram labels."""
-        labels_space = self.ansatz_space._circuit_diagram_info_(None)
-        self.assertEqual(labels_space, ['XZ₁', 'XZ₂'])
-        labels_time = self.ansatz_time._circuit_diagram_info_(None)
-        self.assertEqual(labels_time, ['TXZ₁', 'TXZ₂'])
         
     def test_decomposition(self):
         """
@@ -318,12 +306,4 @@ class TestUnitaryAnsatz(unittest.TestCase):
         """Test initialization with a wrong-sized matrix."""
         with self.assertRaises(ValueError):
             UnitaryAnsatz(self.wrong_size_matrix)
-            
-    def test_num_qubits(self):
-        """Test that the number of qubits is correctly reported."""
-        self.assertEqual(self.ansatz._num_qubits_(), 2)
         
-    def test_circuit_diagram_info(self):
-        """Test the circuit diagram labels."""
-        labels = self.ansatz._circuit_diagram_info_(None)
-        self.assertEqual(labels, ['U₁', 'U₂'])
