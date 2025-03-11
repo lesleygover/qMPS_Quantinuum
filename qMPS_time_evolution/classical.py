@@ -313,8 +313,8 @@ def linExtrap(xa, xb, ya, yb, x):
     Raises
         ValueError: If xa and xb are the same (division by zero)
     """
-    if abs(xb - xa) < 1e-12:
-        raise ValueError("X values are too close for stable extrapolation")
+    if abs(xb - xa) == 0 :
+        raise ValueError("X values are the same (divide by zero)")
     
     y = ya + (x - xa) * (yb - ya) / (xb - xa)
     return y
