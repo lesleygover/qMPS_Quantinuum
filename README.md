@@ -1,1 +1,2 @@
 # qMPS_Quantinuum
+This repository holds the code needed to generate the results for the work: "Fully optimised variational simulation of a dynamical quantum phase transition on a trapped-ion quantum computer"
